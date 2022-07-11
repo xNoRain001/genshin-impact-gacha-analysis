@@ -1,7 +1,8 @@
 <template>
   <div>
-    <div class="p-5">
+    <div class="p-5 w-5/12">
       <q-uploader
+        class="w-full"
         hide-upload-btn
         max-files="1"
         :max-file-size="1024 * 1024"
@@ -11,8 +12,19 @@
         @added="addedFile"
         label="上传 output_log.txt 文件"
       />
-      <div class="mt-5">
-        <q-btn @click="startUploadFile" color="primary" label="开始抽卡分析" />
+      <div class="mt-5 flex justify-between items-center">
+        <q-select
+          filled
+          v-model="selectedMode"
+          :options="modeOptions"
+          style="min-width: 150px;"
+          label="选择类型"
+        />
+        <q-btn
+          @click="startUploadFile"
+          color="primary"
+          label="开始抽卡分析"
+        />
       </div>
     </div>
     <div class="p-5">
@@ -106,6 +118,14 @@ export default {
             align: 'center' 
           }
         ]
+      },
+      selectedMode: '限定角色池',
+      modeOptions: ['限定角色池', '武器池', '常驻池'],
+      gachaType: '301',
+      gachaTypeMap: {
+        '限定角色池': '301',
+        '武器池': '302',
+        '常驻池': '200'
       }
     }
   },
@@ -141,27 +161,28 @@ export default {
 
       try {
 
-        // 上传文件，服务器分析出后续调用 API 的必须参数
+        // 上传文件，服务器分析出调用后续 API 的必须参数
         const { 
           status, 
           message, 
-          data: query 
+          data: params 
         } = await request.post('/uploadLogFile', formData)
 
         if (status === 200) {
-          suc(message)
+          suc('正在获取抽卡记录')
+
+          // 更新卡池类型
+          params.gacha_type = this.gachaType
 
           // 获取抽卡记录
           const { data: gachaRecords } = await request.get('/getAllGachaRecords', {
-              params: {
-                ...query
-              }
+              params
             }
           )
 
           this.gachaRecords = gachaRecords
           
-          // 生成表格数据
+          // // 生成表格数据
           this.createGachaTable(gachaRecords)
 
           // 清除 log.txt
@@ -215,6 +236,12 @@ export default {
       const uploader = document.querySelector('.q-uploader')
       const clearBtn = uploader.querySelector('i')
       clearBtn.click()
+    }
+  },
+
+  watch: {
+    selectedMode (newVal) {
+      this.gachaType = this.gachaTypeMap[newVal]
     }
   }
 }

@@ -1,9 +1,9 @@
 const wait = require('./wait')
 const readFile = require('./read-file')
-const textToQuery = require('./text-to-query')
+const textToParams = require('./text-to-params')
 
 module.exports = {
   wait,
   readFile,
-  textToQuery
+  textToParams
 }

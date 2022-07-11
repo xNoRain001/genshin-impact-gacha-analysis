@@ -1,6 +1,6 @@
 const multiparty = require('multiparty')
 const path = require('path')
-const { readFile, textToQuery } = require('../../utils/index')
+const { readFile, textToParams } = require('../../utils/index')
 
 const uploadLogFile = (req, res) => {
   const url = {
@@ -18,7 +18,7 @@ const uploadLogFile = (req, res) => {
       plat_type: '', 
       authkey: '',
       game_biz: '',
-      gacha_type: 301, // 301：UP，302: 武器，200：常驻
+      gacha_type: '',
       page: 1,
       size: 6,
       end_id: 0
@@ -30,7 +30,7 @@ const uploadLogFile = (req, res) => {
   form.parse(req, async (err, fields, files) => {
     const path = files.file[0].path
     const text = await readFile(path)
-    const query = textToQuery(text)
+    const query = textToParams(text)
     const keys = Object.keys(query)
 
     for (let i = 0, key; key = keys[i++];) {

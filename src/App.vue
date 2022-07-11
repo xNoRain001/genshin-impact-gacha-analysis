@@ -26,14 +26,14 @@
       class="bg-grey-2"
     >
       <q-list>
-        <q-item-label header>Essential Links</q-item-label>
+        <q-item-label header>原神工具箱</q-item-label>
         <q-item clickable tag="a" target="_blank" href="https://quasar.dev">
           <q-item-section avatar>
             <q-icon name="school" />
           </q-item-section>
           <q-item-section>
             <q-item-label>抽卡分析</q-item-label>
-            <q-item-label caption>quasar.dev</q-item-label>
+            <q-item-label caption>gacha analysis</q-item-label>
           </q-item-section>
         </q-item>
       </q-list>

@@ -13,7 +13,7 @@ const getAllGachaRecords = async (req, res) => {
       allRecords.push(...prePageRecords)
 
       // if end_id exists, get next page records.
-      while (endId && parmas.page < 2) {
+      while (endId) {
         parmas.page++
         parmas.end_id = endId
         await wait(500) // wait some time, avoid visit too frequently.

@@ -45,6 +45,7 @@
               v-for="col in props.cols"
               :key="col.name"
               :props="props"
+              style="font-size: 18px;"
             >
               {{ col.label }}
             </q-th>
@@ -53,7 +54,10 @@
         
         <!-- 自定义行 -->
         <template v-slot:body="props">
-          <q-tr :props="props">
+          <q-tr
+            :props="props"
+            style="font-size: 16px;"
+          >
             <q-td key="itemType" :props="props">
               {{ props.row.itemType }}
             </q-td>
@@ -119,14 +123,16 @@ export default {
           }
         ]
       },
-      selectedMode: '限定角色池',
-      modeOptions: ['限定角色池', '武器池', '常驻池'],
+      selectedMode: '角色活动祈愿',
+      modeOptions: ['角色活动祈愿', '武器活动祈愿', '常驻祈愿'],
       gachaType: '301',
       gachaTypeMap: {
-        '限定角色池': '301',
-        '武器池': '302',
-        '常驻池': '200'
-      }
+        '角色活动祈愿': '301',
+        '武器活动祈愿': '302',
+        '常驻祈愿': '200'
+      },
+      fiveStarItems: [],
+      averageNumberOfFiveStartItems: null
     }
   },
 
@@ -151,8 +157,7 @@ export default {
       }
 
       // 清除之前的抽卡记录
-      this.gachaRecords = []
-      this.gachaTable.rows = []
+      this.resetGachaData()
 
       const formData = new FormData
 
@@ -165,28 +170,25 @@ export default {
         const { 
           status, 
           message, 
-          data: params 
+          // data: params 
         } = await request.post('/uploadLogFile', formData)
 
         if (status === 200) {
           suc('正在获取抽卡记录')
 
           // 更新卡池类型
-          params.gacha_type = this.gachaType
+          // params.gacha_type = this.gachaType
 
-          // 获取抽卡记录
-          const { data: gachaRecords } = await request.get('/getAllGachaRecords', {
-              params
-            }
-          )
+          // // 获取抽卡记录
+          // const { data: gachaRecords } = await request.get('/getAllGachaRecords', {
+          //     params
+          //   }
+          // )
 
+          // this.gachaRecords = gachaRecords
+
+          const gachaRecords = JSON.parse(localStorage.getItem('gachaRecords'))
           this.gachaRecords = gachaRecords
-          
-          // // 生成表格数据
-          this.createGachaTable(gachaRecords)
-
-          // 清除 log.txt
-          this.clearFile()
         } else {
           throw new Error(message)
         }
@@ -195,10 +197,26 @@ export default {
       }
     },
 
+    // 清除文件
+    clearFile () {
+      this.logFile = null
+      const uploader = document.querySelector('.q-uploader')
+      const clearBtn = uploader.querySelector('i')
+      clearBtn.click()
+    },
+
+    // 绘制饼图
+    drawPieChart () {
+      // ...
+    },
+
     // 生成表格数据
-    createGachaTable (gachaRecords) {
-      console.log(gachaRecords)
-      for (let i = 0, l = gachaRecords.length; i < l; i++) {
+    createGachaTableRows (gachaRecords) {
+      let counter = 0
+
+      for (let i = gachaRecords.length - 1; i >= 0; i--) {
+        counter++
+
         const record = gachaRecords[i]
 
         // 去除三星武器
@@ -209,39 +227,70 @@ export default {
         const {
           item_type: itemType, 
           name, 
-          gacha_type, 
           rank_type: rankType,
           time 
         } = record
 
-        const gachaType = gacha_type === '301'
-          ? '角色活动祈愿'
-          : gacha_type === '302'
-              ? '武器活动祈愿'
-              : '常驻祈愿'
+        const gachaType = this.selectedMode
 
-        this.gachaTable.rows.push({
+        const formattedRecord = {
           itemType,
           name,
           gachaType,
           rankType,
           time
-        })
+        }
+        this.gachaTable.rows.unshift(formattedRecord)
+
+        // 记录出现的五星物品和所用抽数
+        if (rankType === '5') {
+          formattedRecord.counter = counter
+          this.fiveStarItems.unshift(formattedRecord)
+          counter = 0
+        }
       }
     },
+    
+    // 计算五星道具平均所用抽数
+    computeAverageNumberOfFiveStartItems () {
+      const formattedFiveStartItem = this.fiveStarItems.slice()
+      formattedFiveStartItem.length--
+      const total = formattedFiveStartItem.reduce((acc, cur) => {
+        return acc + cur.counter
+      }, 0)
+      this.averageNumberOfFiveStartItems = total / formattedFiveStartItem.length
+    },
 
-    // 清除文件
-    clearFile () {
-      this.logFile = null
-      const uploader = document.querySelector('.q-uploader')
-      const clearBtn = uploader.querySelector('i')
-      clearBtn.click()
+    // 重置抽奖记录
+    resetGachaData () {
+      this.gachaRecords = []
+      this.gachaTable.rows = []
+      this.fiveStarItems = []
+      this.averageNumberOfFiveStartItems = null
     }
   },
 
   watch: {
     selectedMode (newVal) {
       this.gachaType = this.gachaTypeMap[newVal]
+    },
+
+    gachaRecords (newVal) {
+      if (newVal.length === 0) {
+        return
+      }
+
+      // 生成表格数据
+      this.createGachaTableRows(newVal)
+
+      // 计算五星物品平均抽数
+      this.computeAverageNumberOfFiveStartItems()
+
+      // 绘制饼图
+      this.drawPieChart()
+
+      // 清除 log.txt
+      this.clearFile()
     }
   }
 }

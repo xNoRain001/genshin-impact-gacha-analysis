@@ -1,1 +1,1 @@
-![](C:\Users\xNoRain\Desktop\public\genshin-impact-gacha-analysis\src\assets\display.png)
+![](src\assets\display.png)

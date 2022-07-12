@@ -15,7 +15,7 @@
           抽卡分析
         </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <div>原神工具箱 v1.0.0</div>
       </q-toolbar>
     </q-header>
 

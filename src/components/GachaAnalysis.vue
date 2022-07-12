@@ -1,44 +1,60 @@
 <template>
-  <div>
-    <div class="p-5 w-5/12">
-      <q-uploader
-        class="w-full"
-        hide-upload-btn
-        max-files="1"
-        :max-file-size="1024 * 1024"
-        :max-total-size="1024 * 1024"
-        accept="txt"
-        @rejected="filedToValidation"
-        @added="addedFile"
-        label="上传 output_log.txt 文件"
-      />
-      <div class="mt-5 flex justify-between items-center">
-        <q-select
-          filled
-          v-model="selectedMode"
-          :options="modeOptions"
-          style="min-width: 150px;"
-          label="选择类型"
+  <div class="p-5">
+    <div>
+      <div class="w-5/12">
+        <q-uploader
+          class="w-full"
+          hide-upload-btn
+          max-files="1"
+          :max-file-size="1024 * 1024"
+          :max-total-size="1024 * 1024"
+          accept="txt"
+          @rejected="filedToValidation"
+          @added="addedFile"
+          label="上传 output_log.txt 文件"
         />
-        <q-btn
-          @click="startUploadFile"
-          color="primary"
-          label="开始抽卡分析"
-        />
+        <div class="mt-5 flex justify-between items-center">
+          <q-select
+            filled
+            v-model="selectedMode"
+            :options="modeOptions"
+            style="min-width: 150px;"
+            label="选择类型"
+          />
+          <q-btn
+            @click="startUploadFile"
+            color="primary"
+            label="开始抽卡分析"
+          />
+        </div>
       </div>
     </div>
-    <div class="p-5">
+    <div class="mt-5">
       <q-table
         :rows="gachaTable.rows"
         :columns="gachaTable.columns"
+        title="抽卡记录"
       >
-        
-        <!-- 自定义顶部 -->
-        <template v-slot:top>
-          <div class="col-2 q-table__title">四星 / 五星</div>
+        <template v-slot:top-right>
+          <q-select
+            filled
+            v-model="selectedRankType"
+            :options="rankTypeOptions"
+            class="mr-5"
+            style="min-width: 150px;"
+            label="选择星级"
+          />
+          <q-input
+            filled
+            v-model="keyword"
+            placeholder="搜索"
+          >
+            <template v-slot:append>
+              <q-icon name="search" />
+            </template>
+          </q-input>
         </template>
         
-        <!-- 自定义表头 -->
         <template v-slot:header="props">
           <q-tr :props="props">
             <q-th
@@ -52,11 +68,10 @@
           </q-tr>
         </template>
         
-        <!-- 自定义行 -->
         <template v-slot:body="props">
           <q-tr
             :props="props"
-            style="font-size: 16px;"
+            style="font-size: 16px !important;"
           >
             <q-td key="itemType" :props="props">
               {{ props.row.itemType }}
@@ -65,7 +80,12 @@
               key="name"
               :props="props" 
               class="text-bold"
-              :class="props.row.rankType === '4' ? 'rank-type-4' : 'rank-type-5'"
+              :class="props.row.rankType === '3' 
+                ? 'rank-type-3' 
+                : props.row.rankType === '4'
+                  ? 'rank-type-4'
+                  : 'rank-type-5'
+              "
             >
               {{ props.row.name }}
             </q-td>
@@ -90,11 +110,16 @@ import { suc, fail } from '../utils'
 export default {
   name: 'GachaAnalysis',
 
+  mounted () {
+    
+  },
+
   data () {
     return {
       logFile: null, // log.txt
       gachaRecords: [], // 抽卡记录
       gachaTable: {
+        sourceRows: [],
         rows: [],
         columns: [
           { 
@@ -132,11 +157,23 @@ export default {
         '常驻祈愿': '200'
       },
       fiveStarItems: [],
-      averageNumberOfFiveStartItems: null
+      averageNumberOfFiveStartItems: null,
+      selectedRankType: '四星和五星',
+      rankTypeOptions: ['四星和五星', '四星', '五星'],
+      rankTypeMap: {
+        '四星': '4',
+        '五星': '5'
+      },
+      keyword: null
     }
   },
 
   methods: {
+    async getUsername () {
+      const data = await request.get('/getUsername')
+      console.log(data)
+    },
+
     // 选取文件后被拒绝的回调
     filedToValidation () {
       fail('上传文件格式错误')
@@ -211,18 +248,117 @@ export default {
     },
 
     // 生成表格数据
-    createGachaTableRows (gachaRecords) {
+    createGachaTableRows (selectedRankType) {
+      const { gachaRecords } = this
+
+      if (selectedRankType === '四星') {
+        for (let i = gachaRecords.length - 1; i >= 0; i--) {
+
+          const record = gachaRecords[i]
+
+          // 去除三星武器
+          if (record.rank_type === '3' || record.rank_type === '5') {
+            continue
+          }
+
+          const {
+            item_type: itemType, 
+            name, 
+            rank_type: rankType,
+            time 
+          } = record
+
+          const gachaType = this.selectedMode
+
+          const formattedRecord = {
+            itemType,
+            name,
+            gachaType,
+            rankType,
+            time
+          }
+          this.gachaTable.rows.unshift(formattedRecord)
+        }
+      }
+      else if (selectedRankType === '五星') {
+        for (let i = gachaRecords.length - 1; i >= 0; i--) {
+
+          const record = gachaRecords[i]
+
+          // 去除三星武器
+          if (record.rank_type === '3' || record.rank_type === '4') {
+            continue
+          }
+
+          const {
+            item_type: itemType, 
+            name, 
+            rank_type: rankType,
+            time 
+          } = record
+
+          const gachaType = this.selectedMode
+
+          const formattedRecord = {
+            itemType,
+            name,
+            gachaType,
+            rankType,
+            time
+          }
+          this.gachaTable.rows.unshift(formattedRecord)
+        }
+      }
+      else {
+        for (let i = gachaRecords.length - 1; i >= 0; i--) {
+
+          const record = gachaRecords[i]
+
+          // 去除三星武器
+          if (record.rank_type === '3') {
+            continue
+          }
+
+          const {
+            item_type: itemType, 
+            name, 
+            rank_type: rankType,
+            time 
+          } = record
+
+          const gachaType = this.selectedMode
+
+          const formattedRecord = {
+            itemType,
+            name,
+            gachaType,
+            rankType,
+            time
+          }
+          this.gachaTable.rows.unshift(formattedRecord)
+        }
+      }
+
+      // 拷贝一份，用于后续搜索
+      this.gachaRecords.sourceRows = this.gachaTable.rows
+    },
+
+    // 根据星级过滤记录
+    filterRecords () {
+      // ...
+    },
+    
+    // 计算五星道具平均所用抽数
+    computeAverageNumberOfFiveStartItems () {
       let counter = 0
+      const { gachaRecords } = this
 
       for (let i = gachaRecords.length - 1; i >= 0; i--) {
         counter++
 
-        const record = gachaRecords[i]
+        const record =gachaRecords[i]
 
-        // 去除三星武器
-        if (record.rank_type === '3') {
-          continue
-        }
+        const gachaType = this.selectedMode
 
         const {
           item_type: itemType, 
@@ -231,8 +367,6 @@ export default {
           time 
         } = record
 
-        const gachaType = this.selectedMode
-
         const formattedRecord = {
           itemType,
           name,
@@ -240,7 +374,6 @@ export default {
           rankType,
           time
         }
-        this.gachaTable.rows.unshift(formattedRecord)
 
         // 记录出现的五星物品和所用抽数
         if (rankType === '5') {
@@ -249,10 +382,7 @@ export default {
           counter = 0
         }
       }
-    },
-    
-    // 计算五星道具平均所用抽数
-    computeAverageNumberOfFiveStartItems () {
+
       const formattedFiveStartItem = this.fiveStarItems.slice()
       formattedFiveStartItem.length--
       const total = formattedFiveStartItem.reduce((acc, cur) => {
@@ -271,6 +401,15 @@ export default {
   },
 
   watch: {
+    keyword () {
+      // ...
+    },
+
+    selectedRankType (newVal) {
+      this.gachaTable.rows = []
+      this.createGachaTableRows(newVal)
+    },
+
     selectedMode (newVal) {
       this.gachaType = this.gachaTypeMap[newVal]
     },
@@ -281,7 +420,7 @@ export default {
       }
 
       // 生成表格数据
-      this.createGachaTableRows(newVal)
+      this.createGachaTableRows(this.selectedRankType)
 
       // 计算五星物品平均抽数
       this.computeAverageNumberOfFiveStartItems()
@@ -297,6 +436,10 @@ export default {
 </script>
 
 <style>
+.rank-type-3 {
+  color: #8E8E8E;
+}
+
 .rank-type-4 {
   color: #A256E1;
 }

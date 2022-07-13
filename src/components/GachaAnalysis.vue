@@ -50,7 +50,8 @@
             placeholder="搜索"
           >
             <template v-slot:append>
-              <q-icon name="search" />
+              <q-icon v-if="keyword === ''" name="search" />
+              <q-icon v-else @click="clearKeyword" class="cursor-pointer" name="close" />
             </template>
           </q-input>
         </template>
@@ -157,6 +158,11 @@ export default {
         '常驻祈愿': '200'
       },
       fiveStarItems: [],
+      fiveStarItemsOfResident: [
+        '迪卢克', '刻晴', '琴', '七七', '莫娜', '阿莫斯之弓', '天空之翼', 
+        '四风原典', '天空之卷', '和璞鸢','天空之脊', '狼的末路', '天空之傲', 
+        '风鹰剑', '天空之刃'
+      ],
       averageNumberOfFiveStartItems: null,
       selectedRankType: '四星和五星',
       rankTypeOptions: ['四星和五星', '四星', '五星'],
@@ -164,11 +170,16 @@ export default {
         '四星': '4',
         '五星': '5'
       },
-      keyword: null
+      keyword: '',
+      missingRate: null,
     }
   },
 
   methods: {
+    clearKeyword () {
+      this.keyword = ''
+    },
+
     async getUsername () {
       const data = await request.get('/getUsername')
       console.log(data)
@@ -304,7 +315,7 @@ export default {
             name,
             gachaType,
             rankType,
-            time
+            time,
           }
           this.gachaTable.rows.unshift(formattedRecord)
         }
@@ -335,6 +346,7 @@ export default {
             rankType,
             time
           }
+
           this.gachaTable.rows.unshift(formattedRecord)
         }
       }
@@ -349,7 +361,7 @@ export default {
     },
     
     // 计算五星道具平均所用抽数
-    computeAverageNumberOfFiveStartItems () {
+    computeAverageNumberOfFiveStartItemsAndMissingRate () {
       let counter = 0
       const { gachaRecords } = this
 
@@ -377,6 +389,8 @@ export default {
 
         // 记录出现的五星物品和所用抽数
         if (rankType === '5') {
+          const isResident = this.fiveStarItemsOfResident.includes(name)
+          formattedRecord.isResident = isResident
           formattedRecord.counter = counter
           this.fiveStarItems.unshift(formattedRecord)
           counter = 0
@@ -385,10 +399,16 @@ export default {
 
       const formattedFiveStartItem = this.fiveStarItems.slice()
       formattedFiveStartItem.length--
+
       const total = formattedFiveStartItem.reduce((acc, cur) => {
         return acc + cur.counter
       }, 0)
       this.averageNumberOfFiveStartItems = total / formattedFiveStartItem.length
+      const missingCount = formattedFiveStartItem.reduce((acc, cur) => {
+        return acc + (cur.isResident ? 1 : 0)
+      }, 0)
+
+      this.missingRate = missingCount / formattedFiveStartItem.length
     },
 
     // 重置抽奖记录
@@ -401,8 +421,21 @@ export default {
   },
 
   watch: {
-    keyword () {
-      // ...
+    keyword (newVal) {
+      const { sourceRows } = this.gachaTable
+
+      if (sourceRows.length === 0) {
+        return
+      }
+
+      if (newVal === '') {
+        this.gachaTable.rows = this.gachaRecords.sourceRows
+        return
+      }
+
+      this.gachaTable.rows = this.gachaRecords.sourceRows.filter(row => {
+        return row.name === newVal
+      })
     },
 
     selectedRankType (newVal) {
@@ -422,8 +455,8 @@ export default {
       // 生成表格数据
       this.createGachaTableRows(this.selectedRankType)
 
-      // 计算五星物品平均抽数
-      this.computeAverageNumberOfFiveStartItems()
+      // 计算五星物品平均抽数和歪率
+      this.computeAverageNumberOfFiveStartItemsAndMissingRate()
 
       // 绘制饼图
       this.drawPieChart()

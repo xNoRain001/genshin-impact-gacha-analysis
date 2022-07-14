@@ -100,16 +100,28 @@
         </template>
       </q-table>
     </div>
+    <div class="mt-5">
+      <Chart
+        class="w-full"
+        style="height: 400px;"
+        :options="barChartOptions"
+      />
+    </div>
   </div>      
 
 </template>
 
 <script>
 import request from '../request/index'
+import Chart from './Chart.vue'
 import { suc, fail } from '../utils'
 
 export default {
   name: 'GachaAnalysis',
+
+  components: {
+    Chart
+  },
 
   mounted () {
     
@@ -118,7 +130,7 @@ export default {
   data () {
     return {
       logFile: null, // log.txt
-      gachaRecords: [], // 抽卡记录
+      gachaRecords: [],
       gachaTable: {
         sourceRows: [],
         rows: [],
@@ -172,6 +184,41 @@ export default {
       },
       keyword: '',
       missingRate: null,
+      barChartOptions: {
+        dataZoom: {
+          // start: 10,
+          type: 'inside'
+        },
+        xAxis: {
+          data: [],
+          axisLabel: {
+            color: 'black',
+            fontSize: 16
+          },
+          axisTick: {
+            alignWithLabel: true
+          },
+        },
+        yAxis: {
+          min: 0,
+          max: 90,
+          axisLabel: {
+            color: 'black',
+            fontSize: 16
+          },
+          splitLine: {
+            show: true
+          }
+        },
+        series: {
+          type: 'bar',
+          data: [],
+          label: {
+          show: true
+          },
+          barWidth: 40,
+        }
+      }
     }
   },
 
@@ -254,8 +301,15 @@ export default {
     },
 
     // 绘制饼图
-    drawPieChart () {
-      // ...
+    drawBarChart () {
+      const names = this.fiveStarItems.map(item => {
+        return item.name
+      })
+      const count = this.fiveStarItems.map(item => {
+        return item.counter
+      })
+      this.barChartOptions.xAxis.data = names
+      this.barChartOptions.series.data = count
     },
 
     // 生成表格数据
@@ -458,8 +512,8 @@ export default {
       // 计算五星物品平均抽数和歪率
       this.computeAverageNumberOfFiveStartItemsAndMissingRate()
 
-      // 绘制饼图
-      this.drawPieChart()
+      // 绘制柱状图
+      this.drawBarChart()
 
       // 清除 log.txt
       this.clearFile()

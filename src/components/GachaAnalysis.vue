@@ -109,14 +109,42 @@
       </q-table>
     </div>
     <div class="mt-5">
-      <Chart
-        class="w-full"
-        style="height: 400px;"
-        :options="barChartOptions"
-      />
+      <div class="flex items-center justify-evenly text-base">
+        <q-select
+          filled
+          v-model="selectedBarChartSort"
+          :options="barChartSortOptions"
+          class="w-1/12"
+          style="min-width: 150px;"
+          label="排序"
+        />
+        <q-separator vertical inset />
+        <div>总：{{ totalCost }}</div>
+        <q-separator vertical inset />
+        <div>出金：{{ formattedFiveStartItem.length }} 个</div>
+        <q-separator vertical inset />
+        <div>平均：{{ averageCost }}</div>
+        <q-separator vertical inset />
+        <div>最欧：{{ leastCost }}</div>
+        <q-separator vertical inset />
+        <div>最非：{{ mostCost }}</div>
+        <q-separator vertical inset />
+        <div>歪率：{{ missingRate }}</div>
+      </div>
+      <div class="flex">
+        <Chart
+          class="w-1/2"
+          style="height: 400px;"
+          :options="barChartOptions"
+          />
+        <Chart
+          class="w-1/2"
+          style="height: 400px;"
+          :options="pieChartOptions"
+        />
+      </div>
     </div>
   </div>      
-
 </template>
 
 <script>
@@ -189,7 +217,15 @@ export default {
       },
       keyword: '',
       missingRate: null,
+      mostCost: null,
+      leastCost: null,
+      totalCost: null,
+      missingCount: null,
       barChartOptions: {
+        grid: {
+          left: '5%',
+          right: '5%'
+        },
         dataZoom: {
           // start: 10,
           type: 'inside'
@@ -207,25 +243,51 @@ export default {
         yAxis: {
           min: 0,
           max: 90,
+          splitNumber: 9,
           axisLabel: {
             color: 'black',
             fontSize: 16
           },
           splitLine: {
-            show: true
+            show: false
           }
         },
         series: {
           type: 'bar',
           data: [],
           label: {
-          show: true
+            show: true
           },
           barWidth: 40,
         }
       },
+      pieChartOptions: {
+        grid: {
+          left: '5%',
+          right: '5%'
+        },
+        legend: {
+          orient: "vertical",
+          left: "10%",
+          top: "10%",
+          data: ["常驻", "UP"]
+        },
+        series: [
+          {
+            type: "pie",
+            data: [],
+            label: {
+              formatter: '{b}: {d}%'
+            }
+          }
+        ]
+      },
       selectedTimeMode: '由近至远',
-      timeModeOptions: ['由近至远', '由远至近']
+      timeModeOptions: ['由近至远', '由远至近'],
+      barChartSortOptions: [
+        '抽数从少到多', '抽数从多到少', '时间由近至远', '时间由远至近'
+      ],
+      selectedBarChartSort: '时间由近至远'
     }
   },
 
@@ -508,18 +570,61 @@ export default {
         return acc + cur.cost
       }, 0)
 
-      this.averageCost = total / formattedFiveStartItem.length
+      this.averageCost = `${ total / formattedFiveStartItem.length } 抽`
       
     },
 
     // 计算歪率
     computeMissingRate () {
+      const { missingCount, formattedFiveStartItem } = this
+
+      this.missingRate = `
+        ${ (missingCount / formattedFiveStartItem.length).toFixed(2) }%
+      `
+    },
+
+    // 计算总抽数
+    computeTotalCost () {
       const { formattedFiveStartItem } = this
-      const missingCount = formattedFiveStartItem.reduce((acc, cur) => {
-        return acc + (cur.isResident ? 1 : 0)
+      const totalCost = formattedFiveStartItem.reduce((acc, cur) => {
+        return acc + cur.cost
       }, 0)
 
-      this.missingRate = missingCount / formattedFiveStartItem.length
+      this.totalCost = `${ totalCost } 抽`
+    },
+
+    // 计算最欧
+    computeMostCost () {
+      const { formattedFiveStartItem } = this
+      formattedFiveStartItem.sort((a, b) => a.cost - b.cost)
+
+      this.leastCost = `
+        ${ formattedFiveStartItem[0].name } ${ formattedFiveStartItem[0].cost } 抽
+      ` 
+    },
+
+    // 计算最非
+    computeLeastCost () {
+      const { formattedFiveStartItem } = this
+      formattedFiveStartItem.sort((a, b) => b.cost - a.cost)
+
+      this.mostCost = `
+        ${ formattedFiveStartItem[0].name } ${ formattedFiveStartItem[0].cost } 抽
+      ` 
+    },
+
+    // 计算歪的个数
+    computeMissingCount () {
+      const { formattedFiveStartItem } = this
+      let missingCount = 0
+
+      for (let i = 0, l = formattedFiveStartItem.length; i < l; i++) {
+        if (formattedFiveStartItem[i].isResident) {
+          missingCount++
+        }
+      }
+
+      this.missingCount = missingCount
     },
 
     // 重置有关数据
@@ -529,6 +634,19 @@ export default {
       this.gachaTable.rows = []
       this.fiveStarItems = []
       this.averageNumberOfFiveStartItems = null
+    },
+
+    drawPieChart () {
+      this.pieChartOptions.series[0].data.push(
+        {
+          name: '常驻',
+          value: this.missingCount
+        },
+        {
+          name: 'UP',
+          value: this.formattedFiveStartItem.length - this.missingCount
+        }
+      )
     }
   },
 
@@ -573,14 +691,29 @@ export default {
       // 可能需要去除最后一金
       this.getFormattedFiveStartItems()
 
-      // 绘制柱状图
-      this.drawBarChart()
-
       // 计算五星道具平均抽数
       this.computeAverageCost()
 
+      // 计算总抽数
+      this.computeTotalCost()
+
+      // 计算最非
+      this.computeMostCost()
+
+      // 计算最欧
+      this.computeLeastCost()
+
+      // 计算歪数
+      this.computeMissingCount()
+
       // 计算歪率
       this.computeMissingRate()
+
+      // 绘制柱状图
+      this.drawBarChart()
+
+      // 绘制饼图
+      this.drawPieChart()
 
       // 清除 log.txt
       this.clearFile()

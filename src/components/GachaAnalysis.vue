@@ -11,15 +11,15 @@
           accept="txt"
           @rejected="filedToValidation"
           @added="addedFile"
-          label="上传 output_log.txt 文件"
+          label="上传 output_log.txt"
         />
         <div class="mt-5 flex justify-between items-center">
           <q-select
             filled
-            v-model="selectedMode"
-            :options="modeOptions"
+            v-model="selectedGachaType"
+            :options="gachaTypeOptions"
             style="min-width: 150px;"
-            label="选择类型"
+            label="抽卡类型"
           />
           <q-btn
             @click="startUploadFile"
@@ -121,7 +121,7 @@
         <q-separator vertical inset />
         <div>总：{{ totalCost }}</div>
         <q-separator vertical inset />
-        <div>出金：{{ formattedFiveStartItem.length }} 个</div>
+        <div>出金：{{ formattedFiveStartItems.length }} 个</div>
         <q-separator vertical inset />
         <div>平均：{{ averageCost }}</div>
         <q-separator vertical inset />
@@ -193,8 +193,8 @@ export default {
           }
         ]
       },
-      selectedMode: '角色活动祈愿',
-      modeOptions: ['角色活动祈愿', '武器活动祈愿', '常驻祈愿'],
+      selectedGachaType: '角色活动祈愿',
+      gachaTypeOptions: ['角色活动祈愿', '武器活动祈愿', '常驻祈愿'],
       gachaType: '301',
       gachaTypeMap: {
         '角色活动祈愿': '301',
@@ -202,7 +202,7 @@ export default {
         '常驻祈愿': '200'
       },
       fiveStarItems: [],
-      formattedFiveStartItem: [],
+      formattedFiveStartItems: [],
       fiveStarItemsOfResident: [
         '迪卢克', '刻晴', '琴', '七七', '莫娜', '阿莫斯之弓', '天空之翼', 
         '四风原典', '天空之卷', '和璞鸢','天空之脊', '狼的末路', '天空之傲', 
@@ -379,15 +379,14 @@ export default {
 
     // 绘制柱状图
     drawBarChart () {
-      console.log(this.formattedFiveStartItem)
-      const names = this.formattedFiveStartItem.map(item => {
+      const names = this.formattedFiveStartItems.map(item => {
         return item.name
       })
-      const count = this.formattedFiveStartItem.map(item => {
+      const cost = this.formattedFiveStartItems.map(item => {
         return item.cost
       })
       this.barChartOptions.xAxis.data = names
-      this.barChartOptions.series.data = count
+      this.barChartOptions.series.data = cost
     },
 
     // 生成表格数据
@@ -408,7 +407,7 @@ export default {
           rank_type: rankType,
           time 
         } = record
-        const gachaType = this.selectedMode
+        const gachaType = this.selectedGachaType
         const formattedRecord = {
           itemType,
           name,
@@ -421,101 +420,7 @@ export default {
       }
 
       // 拷贝一份，用于后续搜索
-      this.gachaRecords.sourceRows = this.gachaTable.rows
-
-      // if (selectedRankType === '四星') {
-      //   for (let i = gachaRecords.length - 1; i >= 0; i--) {
-
-      //     const record = gachaRecords[i]
-
-      //     // 去除三星武器
-      //     if (record.rank_type === '3' || record.rank_type === '5') {
-      //       continue
-      //     }
-
-      //     const {
-      //       item_type: itemType, 
-      //       name, 
-      //       rank_type: rankType,
-      //       time 
-      //     } = record
-
-      //     const gachaType = this.selectedMode
-
-      //     const formattedRecord = {
-      //       itemType,
-      //       name,
-      //       gachaType,
-      //       rankType,
-      //       time
-      //     }
-      //     this.gachaTable.rows.unshift(formattedRecord)
-      //   }
-      // }
-      // else if (selectedRankType === '五星') {
-      //   for (let i = gachaRecords.length - 1; i >= 0; i--) {
-
-      //     const record = gachaRecords[i]
-
-      //     // 去除三星武器
-      //     if (record.rank_type === '3' || record.rank_type === '4') {
-      //       continue
-      //     }
-
-      //     const {
-      //       item_type: itemType, 
-      //       name, 
-      //       rank_type: rankType,
-      //       time 
-      //     } = record
-
-      //     const gachaType = this.selectedMode
-
-      //     const formattedRecord = {
-      //       itemType,
-      //       name,
-      //       gachaType,
-      //       rankType,
-      //       time,
-      //     }
-      //     this.gachaTable.rows.unshift(formattedRecord)
-      //   }
-      // }
-      // else {
-      //   for (let i = gachaRecords.length - 1; i >= 0; i--) {
-
-      //     const record = gachaRecords[i]
-
-      //     // 去除三星武器
-      //     if (record.rank_type === '3') {
-      //       continue
-      //     }
-
-      //     const {
-      //       item_type: itemType, 
-      //       name, 
-      //       rank_type: rankType,
-      //       time 
-      //     } = record
-
-      //     const gachaType = this.selectedMode
-
-      //     const formattedRecord = {
-      //       itemType,
-      //       name,
-      //       gachaType,
-      //       rankType,
-      //       time
-      //     }
-
-      //     this.gachaTable.rows.unshift(formattedRecord)
-      //   }
-      // }
-    },
-
-    // 根据星级过滤记录
-    filterRecords () {
-      // ...
+      this.gachaTable.sourceRows = this.gachaTable.rows
     },
 
     // 获取五星道具所用抽数
@@ -552,41 +457,42 @@ export default {
     },
 
     // 可能需要去除最后一金
-    getFormattedFiveStartItems () {
+    getformattedFiveStartItems () {
       let { fiveStarItems } = this
+      console.log(fiveStarItems)
 
       // 除非最后一金用了 90 抽，否则去除掉，保证结果准确性。
       if (fiveStarItems[fiveStarItems.length - 1].count === 90) {
-        this.formattedFiveStartItem = fiveStarItems.slice()
+        this.formattedFiveStartItems = fiveStarItems.slice()
       } else {
-        this.formattedFiveStartItem = fiveStarItems.slice(0, -1)
+        this.formattedFiveStartItems = fiveStarItems.slice(0, -1)
       }
     },
     
     // 计算五星道具平均所用抽数
     computeAverageCost () {
-      const { formattedFiveStartItem } = this
-      const total = formattedFiveStartItem.reduce((acc, cur) => {
+      const { formattedFiveStartItems } = this
+      const total = formattedFiveStartItems.reduce((acc, cur) => {
         return acc + cur.cost
       }, 0)
 
-      this.averageCost = `${ total / formattedFiveStartItem.length } 抽`
+      this.averageCost = `${ total / formattedFiveStartItems.length } 抽`
       
     },
 
     // 计算歪率
     computeMissingRate () {
-      const { missingCount, formattedFiveStartItem } = this
+      const { missingCount, formattedFiveStartItems } = this
 
       this.missingRate = `
-        ${ (missingCount / formattedFiveStartItem.length).toFixed(2) }%
+        ${ (missingCount / formattedFiveStartItems.length).toFixed(2) }%
       `
     },
 
     // 计算总抽数
     computeTotalCost () {
-      const { formattedFiveStartItem } = this
-      const totalCost = formattedFiveStartItem.reduce((acc, cur) => {
+      const { formattedFiveStartItems } = this
+      const totalCost = formattedFiveStartItems.reduce((acc, cur) => {
         return acc + cur.cost
       }, 0)
 
@@ -595,31 +501,35 @@ export default {
 
     // 计算最欧
     computeMostCost () {
-      const { formattedFiveStartItem } = this
-      formattedFiveStartItem.sort((a, b) => a.cost - b.cost)
-
+      const { formattedFiveStartItems } = this
+      const clonedFormattedFiveStartItems = formattedFiveStartItems.slice()
+      formattedFiveStartItems.sort((a, b) => a.cost - b.cost)
       this.leastCost = `
-        ${ formattedFiveStartItem[0].name } ${ formattedFiveStartItem[0].cost } 抽
+        ${ formattedFiveStartItems[0].name } ${ formattedFiveStartItems[0].cost } 抽
       ` 
+
+      // 还原回最开始的顺序
+      this.formattedFiveStartItems = clonedFormattedFiveStartItems
     },
 
     // 计算最非
     computeLeastCost () {
-      const { formattedFiveStartItem } = this
-      formattedFiveStartItem.sort((a, b) => b.cost - a.cost)
-
+      const { formattedFiveStartItems } = this
+      const clonedFormattedFiveStartItems = this.formattedFiveStartItems.slice()
+      formattedFiveStartItems.sort((a, b) => b.cost - a.cost)
       this.mostCost = `
-        ${ formattedFiveStartItem[0].name } ${ formattedFiveStartItem[0].cost } 抽
+        ${ formattedFiveStartItems[0].name } ${ formattedFiveStartItems[0].cost } 抽
       ` 
+      this.formattedFiveStartItems = clonedFormattedFiveStartItems
     },
 
     // 计算歪的个数
     computeMissingCount () {
-      const { formattedFiveStartItem } = this
+      const { formattedFiveStartItems } = this
       let missingCount = 0
 
-      for (let i = 0, l = formattedFiveStartItem.length; i < l; i++) {
-        if (formattedFiveStartItem[i].isResident) {
+      for (let i = 0, l = formattedFiveStartItems.length; i < l; i++) {
+        if (formattedFiveStartItems[i].isResident) {
           missingCount++
         }
       }
@@ -629,11 +539,30 @@ export default {
 
     // 重置有关数据
     resetData () {
+      this.selectedTimeMode = '由近至远'
+      this.selectedRankType = '四星和五星'
+      this.keyword = ''
       this.gachaRecords = []
       this.gachaTable.sourceRows = []
       this.gachaTable.rows = []
       this.fiveStarItems = []
-      this.averageNumberOfFiveStartItems = null
+      this.formattedFiveStartItems = []
+      this.totalCost = null
+      this.averageCost = null
+      this.mostCost = null
+      this.leastCost = null
+      this.missingCount = null
+      this.missingRate = null
+
+      this.barChartOptions.xAxis.data = []
+      this.barChartOptions.series.data = []
+
+      this.pieChartOptions.series[0].data = []
+    },
+
+    // 重置表格数据
+    resetGachaTableData () {
+
     },
 
     drawPieChart () {
@@ -644,13 +573,59 @@ export default {
         },
         {
           name: 'UP',
-          value: this.formattedFiveStartItem.length - this.missingCount
+          value: this.formattedFiveStartItems.length - this.missingCount
         }
       )
     }
   },
 
   watch: {
+    selectedBarChartSort (newVal) {
+      console.log(newVal)
+      const { formattedFiveStartItems } = this
+
+      if (newVal === '抽数从少到多') {
+        formattedFiveStartItems.sort((a, b) => {
+          return a.cost - b.cost
+        })
+      }
+      else if (newVal === '抽数从多到少') {
+        formattedFiveStartItems.sort((a, b) => {
+          return b.cost - a.cost
+        })
+      }
+      else if (newVal === '时间由近至远') {
+        formattedFiveStartItems.sort((a, b) => {
+          return (new Date(b.time)).getTime() - (new Date(a.time)).getTime()
+        })
+      } else {
+        formattedFiveStartItems.sort((a, b) => {
+          return (new Date(a.time)).getTime() - (new Date(b.time)).getTime()
+        })
+      }
+
+      const names = formattedFiveStartItems.map(item => {
+        return item.name
+      })
+      const cost = formattedFiveStartItems.map(item => {
+        return item.cost
+      })
+      this.barChartOptions.xAxis.data = names
+      this.barChartOptions.series.data = cost
+    },
+
+    selectedTimeMode (newVal) {
+      if (newVal === '由远至近') {
+        this.gachaTable.rows.sort((a, b) => {
+          return (new Date(a.time)).getTime() - (new Date(b.time)).getTime()
+        })
+      } else {
+        this.gachaTable.rows.sort((a, b) => {
+          return (new Date(b.time)).getTime() - (new Date(a.time)).getTime()
+        })
+      }
+    },
+
     keyword (newVal) {
       const { sourceRows } = this.gachaTable
 
@@ -659,21 +634,30 @@ export default {
       }
 
       if (newVal === '') {
-        this.gachaTable.rows = this.gachaRecords.sourceRows
+        if (this.gachaTable.sourceRows.length) {
+          this.gachaTable.rows = this.gachaTable.sourceRows
+        }
         return
       }
 
-      this.gachaTable.rows = this.gachaRecords.sourceRows.filter(row => {
-        return row.name === newVal
+      this.gachaTable.rows = this.gachaTable.sourceRows.filter(row => {
+        return row.name.includes(newVal)
       })
     },
 
     selectedRankType (newVal) {
-      this.gachaTable.rows = []
-      this.createGachaTableRows(newVal)
+      if (newVal === '四星和五星') {
+        this.gachaTable.rows = this.gachaTable.sourceRows
+        return
+      }
+
+      const rankType = this.rankTypeMap[newVal]
+      this.gachaTable.rows = this.gachaTable.sourceRows.filter(row => {
+        return row.rankType === rankType
+      })
     },
 
-    selectedMode (newVal) {
+    selectedGachaType (newVal) {
       this.gachaType = this.gachaTypeMap[newVal]
     },
 
@@ -689,7 +673,7 @@ export default {
       this.getFiveStartItems()
 
       // 可能需要去除最后一金
-      this.getFormattedFiveStartItems()
+      this.getformattedFiveStartItems()
 
       // 计算五星道具平均抽数
       this.computeAverageCost()

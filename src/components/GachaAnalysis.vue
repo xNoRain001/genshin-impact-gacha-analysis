@@ -1,5 +1,12 @@
 <template>
   <div class="p-5">
+    <q-linear-progress
+      indeterminate  
+      size="md"
+      style="display: none"
+      class="mb-5"
+      ref="progressBar"
+    />
     <div>
       <div class="w-5/12">
         <q-uploader
@@ -29,7 +36,10 @@
         </div>
       </div>
     </div>
-    <div class="mt-5">
+    <div
+      v-if="isShowTable"
+      class="mt-5"
+    >
       <q-table
         :rows="gachaTable.rows"
         :columns="gachaTable.columns"
@@ -108,7 +118,11 @@
         </template>
       </q-table>
     </div>
-    <div class="mt-5">
+    <div
+      v-if="isShowChart"
+      class="mt-5 p-3"
+      style="box-shadow: 0 1px 5px rgb(0 0 0 / 20%), 0 2px 2px rgb(0 0 0 / 14%), 0 3px 1px -2px rgb(0 0 0 / 12%);"
+    >
       <div class="flex items-center justify-evenly text-base">
         <q-select
           filled
@@ -222,10 +236,10 @@ export default {
       totalCost: null,
       missingCount: null,
       barChartOptions: {
-        grid: {
-          left: '5%',
-          right: '5%'
-        },
+        // grid: {
+        //   left: '10%',
+        //   right: '5%'
+        // },
         dataZoom: {
           // start: 10,
           type: 'inside'
@@ -262,10 +276,10 @@ export default {
         }
       },
       pieChartOptions: {
-        grid: {
-          left: '5%',
-          right: '5%'
-        },
+        // grid: {
+        //   left: '0%',
+        //   right: '5%'
+        // },
         legend: {
           orient: "vertical",
           left: "10%",
@@ -287,7 +301,9 @@ export default {
       barChartSortOptions: [
         '抽数从少到多', '抽数从多到少', '时间由近至远', '时间由远至近'
       ],
-      selectedBarChartSort: '时间由近至远'
+      selectedBarChartSort: '时间由近至远',
+      isShowTable: false,
+      isShowChart: false
     }
   },
 
@@ -342,11 +358,23 @@ export default {
       }
     },
 
+    // 开启进度条
+    openProgressBar () {
+      this.$refs.progressBar.$el.style.display = 'block'
+    },
+
+    // 关闭进度条
+    closeProgressBar () {
+      this.$refs.progressBar.$el.style.display = 'none'
+    },
+
     // 获取抽卡记录
-    getGachaRecords (/* params */) {
+    async getGachaRecords (/* params */) {
       try {
         const closeNotify = suc('正在获取抽卡记录')
 
+        this.openProgressBar()
+        
         // 用户选择的卡池类型
         // params.gacha_type = this.gachaType
 
@@ -363,6 +391,7 @@ export default {
         this.gachaRecords = gachaRecords
 
         closeNotify()
+        this.closeProgressBar()
         suc('成功获取抽卡记录')
       } catch (error) {
         fail(error)
@@ -459,7 +488,6 @@ export default {
     // 可能需要去除最后一金
     getformattedFiveStartItems () {
       let { fiveStarItems } = this
-      console.log(fiveStarItems)
 
       // 除非最后一金用了 90 抽，否则去除掉，保证结果准确性。
       if (fiveStarItems[fiveStarItems.length - 1].count === 90) {
@@ -554,6 +582,9 @@ export default {
       this.missingCount = null
       this.missingRate = null
 
+      this.isShowTable = false
+      this.isShowChart = false
+
       this.barChartOptions.xAxis.data = []
       this.barChartOptions.series.data = []
 
@@ -581,7 +612,6 @@ export default {
 
   watch: {
     selectedBarChartSort (newVal) {
-      console.log(newVal)
       const { formattedFiveStartItems } = this
 
       if (newVal === '抽数从少到多') {
@@ -668,6 +698,9 @@ export default {
 
       // 生成表格数据
       this.createGachaTableRows()
+      
+      // 展示表格
+      this.isShowTable = true
 
       // 获取五星道具
       this.getFiveStartItems()
@@ -675,6 +708,7 @@ export default {
       // 可能需要去除最后一金
       this.getformattedFiveStartItems()
 
+      
       // 计算五星道具平均抽数
       this.computeAverageCost()
 
@@ -698,6 +732,9 @@ export default {
 
       // 绘制饼图
       this.drawPieChart()
+
+      // 展示图标
+      this.isShowChart = true
 
       // 清除 log.txt
       this.clearFile()

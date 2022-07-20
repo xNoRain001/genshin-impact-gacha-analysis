@@ -119,7 +119,7 @@
       </q-table>
     </div>
     <div
-      v-if="isShowChart"
+      v-if="isShowBarChart"
       class="mt-5 p-3"
       style="box-shadow: 0 1px 5px rgb(0 0 0 / 20%), 0 2px 2px rgb(0 0 0 / 14%), 0 3px 1px -2px rgb(0 0 0 / 12%);"
     >
@@ -142,16 +142,17 @@
         <div>最欧：{{ leastCost }}</div>
         <q-separator vertical inset />
         <div>最非：{{ mostCost }}</div>
-        <q-separator vertical inset />
-        <div>歪率：{{ missingRate }}</div>
+        <q-separator v-if="gachaType !== '200'" vertical inset />
+        <div v-if="gachaType !== '200'">歪率：{{ missingRate }}</div>
       </div>
       <div class="flex">
         <Chart
-          class="w-1/2"
+          :class="isShowPieChart ? 'w-1/2' : 'w-full'"
           style="height: 400px;"
           :options="barChartOptions"
           />
         <Chart
+          v-if="isShowPieChart"
           class="w-1/2"
           style="height: 400px;"
           :options="pieChartOptions"
@@ -217,11 +218,7 @@ export default {
       },
       fiveStarItems: [],
       formattedFiveStartItems: [],
-      fiveStarItemsOfResident: [
-        '迪卢克', '刻晴', '琴', '七七', '莫娜', '阿莫斯之弓', '天空之翼', 
-        '四风原典', '天空之卷', '和璞鸢','天空之脊', '狼的末路', '天空之傲', 
-        '风鹰剑', '天空之刃'
-      ],
+      fiveStarItemsOfResident: ['迪卢克', '刻晴', '琴', '七七', '莫娜'],
       averageCost: null,
       selectedRankType: '四星和五星',
       rankTypeOptions: ['四星和五星', '四星', '五星'],
@@ -303,7 +300,8 @@ export default {
       ],
       selectedBarChartSort: '时间由近至远',
       isShowTable: false,
-      isShowChart: false
+      isShowBarChart: false,
+      isShowPieChart: false
     }
   },
 
@@ -384,7 +382,7 @@ export default {
           }
         )
 
-        // const gachaRecords = JSON.parse(localStorage.getItem('gachaRecords'))
+        // const gachaRecords = JSON.parse(localStorage.getItem('200'))
 
         // 保存抽卡记录
         this.gachaRecords = gachaRecords
@@ -582,7 +580,8 @@ export default {
       this.missingRate = null
 
       this.isShowTable = false
-      this.isShowChart = false
+      this.isShowBarChart = false
+      this.isShowPieChart = false
 
       this.barChartOptions.xAxis.data = []
       this.barChartOptions.series.data = []
@@ -695,48 +694,89 @@ export default {
         return
       }
 
-      // 生成表格数据
-      this.createGachaTableRows()
+      if (this.gachaType === '301') {
+        // 生成表格数据
+        this.createGachaTableRows()
+        
+        // 展示表格
+        this.isShowTable = true
+
+        // 获取五星道具
+        this.getFiveStartItems()
+
+        // 可能需要去除最后一金
+        this.getformattedFiveStartItems()
+        
+        // 计算五星道具平均抽数
+        this.computeAverageCost()
+
+        // 计算总抽数
+        this.computeTotalCost()
+
+        // 计算最非
+        this.computeMostCost()
+
+        // 计算最欧
+        this.computeLeastCost()
+
+        // 计算歪数
+        this.computeMissingCount()
+
+        // 计算歪率
+        this.computeMissingRate()
+
+        // 绘制柱状图
+        this.drawBarChart()
+
+        // 绘制饼图
+        this.drawPieChart()
+
+        // 展示图表
+        this.isShowBarChart = true
+        this.isShowPieChart = true
+
+        // 清除 log.txt
+        this.clearFile()
+      } 
+      else if (this.gachaType === '302') {
+        // ...
+      }
+      else {
+        // 生成表格数据
+        this.createGachaTableRows()
+        
+        // 展示表格
+        this.isShowTable = true
+
+        // 获取五星道具
+        this.getFiveStartItems()
+
+        // 可能需要去除最后一金
+        this.getformattedFiveStartItems()
+        
+        // 计算五星道具平均抽数
+        this.computeAverageCost()
+
+        // 计算总抽数
+        this.computeTotalCost()
+
+        // 计算最非
+        this.computeMostCost()
+
+        // 计算最欧
+        this.computeLeastCost()
+
+        // 绘制柱状图
+        this.drawBarChart()
+
+        // 展示图表
+        this.isShowBarChart = true
+
+        // 清除 log.txt
+        this.clearFile()
+      }
+
       
-      // 展示表格
-      this.isShowTable = true
-
-      // 获取五星道具
-      this.getFiveStartItems()
-
-      // 可能需要去除最后一金
-      this.getformattedFiveStartItems()
-
-      
-      // 计算五星道具平均抽数
-      this.computeAverageCost()
-
-      // 计算总抽数
-      this.computeTotalCost()
-
-      // 计算最非
-      this.computeMostCost()
-
-      // 计算最欧
-      this.computeLeastCost()
-
-      // 计算歪数
-      this.computeMissingCount()
-
-      // 计算歪率
-      this.computeMissingRate()
-
-      // 绘制柱状图
-      this.drawBarChart()
-
-      // 绘制饼图
-      this.drawPieChart()
-
-      // 展示图标
-      this.isShowChart = true
-
-      // 清除 log.txt
-      this.clearFile()
     }
   }
 }

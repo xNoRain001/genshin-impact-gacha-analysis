@@ -16,7 +16,7 @@ const getAllGachaRecords = async (req, res) => {
       while (endId) {
         parmas.page++
         parmas.end_id = endId
-        await wait(500) // wait some time, avoid visit too frequently.
+        await wait(200) // wait some time, avoid visit too frequently.
         const prePageRecords = await getPerPageGachaRecords(parmas)
         allRecords.push(...prePageRecords)
 

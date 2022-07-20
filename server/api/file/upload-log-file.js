@@ -32,7 +32,7 @@ const uploadLogFile = (req, res) => {
     const text = await readFile(path)
     const query = textToParams(text)
     const keys = Object.keys(query)
-
+    
     for (let i = 0, key; key = keys[i++];) {
       if (query[key] === '') {
         res.send({

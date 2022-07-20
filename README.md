@@ -1,4 +1,8 @@
-![](src\assets\display.png)
+## display
+
+![](src\assets\display-1.png)
+![](src\assets\display-2.png)
+![](src\assets\display-3.png)
 
 ## start
 

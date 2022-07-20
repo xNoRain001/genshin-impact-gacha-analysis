@@ -13,8 +13,8 @@
           class="w-full"
           hide-upload-btn
           max-files="1"
-          :max-file-size="1024 * 1024"
-          :max-total-size="1024 * 1024"
+          :max-file-size="2 * 1024 * 1024"
+          :max-total-size="2 * 1024 * 1024"
           accept="txt"
           @rejected="filedToValidation"
           @added="addedFile"
@@ -345,11 +345,11 @@ export default {
         const { 
           status, 
           message, 
-          // data: params 
+          data: params 
         } = await request.post('/uploadLogFile', formData)
 
         if (status === 200) {
-          this.getGachaRecords(/* params */)
+          this.getGachaRecords(params)
         } else {
           throw new Error(message)
         }
@@ -369,25 +369,24 @@ export default {
     },
 
     // 获取抽卡记录
-    async getGachaRecords (/* params */) {
+    async getGachaRecords (params) {
       try {
         const closeNotify = suc('正在获取抽卡记录')
 
         this.openProgressBar()
         
         // 用户选择的卡池类型
-        // params.gacha_type = this.gachaType
+        params.gacha_type = this.gachaType
 
-        // // 获取抽卡记录
-        // const { data: gachaRecords } = await request.get('/getAllGachaRecords', {
-        //     params
-        //   }
-        // )
+        // 获取抽卡记录
+        const { data: gachaRecords } = await request.get('/getAllGachaRecords', {
+            params
+          }
+        )
+
+        // const gachaRecords = JSON.parse(localStorage.getItem('gachaRecords'))
 
         // 保存抽卡记录
-        // this.gachaRecords = gachaRecords
-
-        const gachaRecords = JSON.parse(localStorage.getItem('gachaRecords'))
         this.gachaRecords = gachaRecords
 
         closeNotify()
@@ -504,7 +503,7 @@ export default {
         return acc + cur.cost
       }, 0)
 
-      this.averageCost = `${ total / formattedFiveStartItems.length } 抽`
+      this.averageCost = `${ (total / formattedFiveStartItems.length).toFixed(2) } 抽`
       
     },
 

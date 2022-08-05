@@ -1,9 +1,9 @@
-const uploadLogFile = require('./file/upload-log-file')
-const getAllGachaRecords = require('./gacha-record/get-all-gacha-records')
+const uploadLogFile = require('./upload-log-file')
+const getAllGachaRecords = require('./get-all-gacha-records')
 
-const initAPIs = (app) => {
-  app.post('/uploadLogFile', uploadLogFile)
-  app.get('/getAllGachaRecords', getAllGachaRecords)
+const initAPIs = app => {
+  app.post('/upload-log-file', uploadLogFile)
+  app.get('/get-all-gacha-records', getAllGachaRecords)
 }
 
 module.exports = initAPIs

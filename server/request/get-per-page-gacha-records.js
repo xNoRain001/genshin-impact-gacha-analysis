@@ -1,14 +1,15 @@
-const axios = require('axios')
 const qs = require('qs')
+const axios = require('axios')
+const { baseUrl } = require('../shared')
 
 const getPerPageGachaRecords = params => {
   return new Promise(async (resolve, reject) => {
     try {
-      const url = `https://hk4e-api.mihoyo.com/event/gacha_info/api/getGachaLog?${ qs.stringify(params) }`
+      const url = `${ baseUrl }?${ qs.stringify(params) }`
       const { data: { data: { list } } }  = await axios.get(url)
-      return resolve(list)
+      resolve(list)
     } catch (error) {
-      return reject(error)
+      reject(error)
     }
   })
 }

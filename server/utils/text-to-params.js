@@ -1,13 +1,16 @@
 const qs = require('qs')
 
+// 从文件中找出获取抽卡记录需要的参数
 const textToParams = text => {
-  const urlStartIndex = text.indexOf('https://webstatic.mihoyo.com')
-  const urlEndIndex = text.indexOf('#/log')
-  const url = text.slice(urlStartIndex, urlEndIndex)
-  const queryFlag = url.indexOf('?')
-  const params = qs.parse(url.slice(queryFlag + 1))
-
-  return params
+  const flag = 'OnGetWebViewPageFinish:'
+  const startIndex = text.indexOf(`${ flag }https://webstatic.mihoyo.com/hk4e/event/e20190909gacha/index.html`)
+  const endIndex = startIndex + text.slice(startIndex).indexOf('#/log')
+  const url = text.slice(startIndex, endIndex)
+  // ? 的索引
+  const questionMarkIdx = url.indexOf('?')
+  const params = url.slice(questionMarkIdx + 1)
+  
+  return qs.parse(params)
 }
 
 module.exports = textToParams

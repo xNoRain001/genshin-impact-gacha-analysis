@@ -344,7 +344,7 @@ export default {
           status, 
           message, 
           data: params 
-        } = await request.post('/uploadLogFile', formData)
+        } = await request.post('/upload-log-file', formData)
 
         if (status === 200) {
           this.getGachaRecords(params)
@@ -368,20 +368,27 @@ export default {
 
     // 获取抽卡记录
     async getGachaRecords (params) {
+      const closeNotify = suc('正在获取抽卡记录')
+      
       try {
-        const closeNotify = suc('正在获取抽卡记录')
-
         this.openProgressBar()
         
         // 用户选择的卡池类型
         params.gacha_type = this.gachaType
 
         // 获取抽卡记录
-        const { data: gachaRecords } = await request.get('/getAllGachaRecords', {
+        const data = await request.get('/get-all-gacha-records', {
             params
           }
         )
 
+        const { status, message } = data
+
+        if (status !== 200) {
+          throw new Error(message)
+        }
+
+        const { data: gachaRecords } = data
         // const gachaRecords = JSON.parse(localStorage.getItem('200'))
 
         // 保存抽卡记录
@@ -391,7 +398,9 @@ export default {
         this.closeProgressBar()
         suc('成功获取抽卡记录')
       } catch (error) {
-        fail(error)
+        closeNotify()
+        this.closeProgressBar()
+        fail(error.message)
       }
     },
 

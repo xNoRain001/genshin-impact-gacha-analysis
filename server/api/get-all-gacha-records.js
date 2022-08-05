@@ -1,38 +1,38 @@
-const getPerPageGachaRecords = require('../../request/get-per-page-gacha-records')
-const { wait } = require('../../utils/index')
+const getPerPageGachaRecords = require('../request/get-per-page-gacha-records')
+const { wait } = require('../utils/index')
 
 const getAllGachaRecords = async (req, res) => {
   let allRecords = []
-  const { query: parmas } = req
+  const { query: params } = req
 
   try {
-    const prePageRecords = await getPerPageGachaRecords(parmas)
+    const prePageRecords = await getPerPageGachaRecords(params)
 
-    if (prePageRecords.length >= 6) {
+    // 可能不止一页
+    if (prePageRecords.length === 6) {
       let endId = prePageRecords[prePageRecords.length - 1].id
       allRecords.push(...prePageRecords)
 
-      // if end_id exists, get next page records.
+      // 如果有 endId，获取下一页数据。
       while (endId) {
-        parmas.page++
-        parmas.end_id = endId
-        await wait(200) // wait some time, avoid visit too frequently.
-        const prePageRecords = await getPerPageGachaRecords(parmas)
+        params.end_id = endId
+        // 等待 200 ms，防止请求太频繁。
+        await wait(200)
+        const prePageRecords = await getPerPageGachaRecords(params)
         allRecords.push(...prePageRecords)
 
-        // if the number of records is less than 6, it means that all records 
-        // have been fetched.
+        // 如果这一页数据量少于 6个，说明所有数据都获取完了。
         if (prePageRecords.length < 6) {
           break
         }
         
-        // update end_id
+        // 否则更新 endId 进行下一轮循环。
         endId = prePageRecords[prePageRecords.length - 1].id
       }
     } else {
       allRecords.push(...prePageRecords)
     }
-    
+
     res.send({
       status: 200,
       statusText: 'OK',

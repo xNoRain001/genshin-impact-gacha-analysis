@@ -389,6 +389,7 @@ export default {
         }
 
         const { data: gachaRecords } = data
+
         // const gachaRecords = JSON.parse(localStorage.getItem('200'))
 
         // 保存抽卡记录

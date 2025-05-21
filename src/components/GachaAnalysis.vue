@@ -377,20 +377,20 @@ export default {
         params.gacha_type = this.gachaType
 
         // 获取抽卡记录
-        const data = await request.get('/get-all-gacha-records', {
-            params
-          }
-        )
+        // const data = await request.get('/get-all-gacha-records', {
+        //     params
+        //   }
+        // )
 
-        const { status, message } = data
+        // const { status, message } = data
 
-        if (status !== 200) {
-          throw new Error(message)
-        }
+        // if (status !== 200) {
+        //   throw new Error(message)
+        // }
 
-        const { data: gachaRecords } = data
+        // const { data: gachaRecords } = data
 
-        // const gachaRecords = JSON.parse(localStorage.getItem('200'))
+        const gachaRecords = JSON.parse(localStorage.getItem(this.gachaType))
 
         // 保存抽卡记录
         this.gachaRecords = gachaRecords
